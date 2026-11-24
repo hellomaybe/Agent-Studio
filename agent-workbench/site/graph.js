@@ -15,7 +15,13 @@ async function api(path,body){const res=await fetch('api/'+path,{method:body===u
 function choose(items,value){const s=el('select');for(const [id,title] of items){const o=el('option',title);o.value=id;s.append(o)}s.value=value;return s}
 function field(host,name,control){const l=el('label',name);control.setAttribute('aria-label',name);host.append(l,control)}
 function j(v){return JSON.stringify(v,null,2)}
-async function fresh(){let e=++epoch;const data=await api(f.id);if(e!==epoch)return;state=data;graph=structuredClone(data.draft);dirty=false;replay=null;render()}
+async function fresh(){
+ const e=++epoch,app=f.id;
+ content.replaceChildren(el('p','正在加载流程…'));delete content.dataset.app;
+ document.querySelectorAll('nav button').forEach(b=>b.disabled=true);
+ try{const data=await api(app);if(e!==epoch)return;state=data;graph=structuredClone(data.draft);dirty=false;replay=null;render();content.dataset.app=app}
+ finally{if(e===epoch)document.querySelectorAll('nav button').forEach(b=>b.disabled=false)}
+}
 function go(v){if(loading)return;view=v;replay=null;render()}
 const w=n=>document.createElementNS('http://www.w3.org/2000/svg',n);
 function attr(n,attrs){for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);return n}
@@ -96,11 +102,23 @@ function evidence(parent,run){
  if(run.status==='waiting'){for(const [ok,text] of [[true,'确认保存'],[false,'退回']])parent.append(btn(text,async()=>{const next=await api(f.id+'/confirm',{id:run.id,approve:ok});evidence(parent,next)}))}
  parent.append(btn('查看执行画布',()=>{view='history';replay=run;selected=run.trace.at(-1)?.node||'start';render()}));
 }
+async function submitRun(app,version,input){
+ const id=crypto.randomUUID(),path=app+'/runs/'+id;
+ let record;
+ try{record=await api(app+'/run',{id,version,input})}
+ catch(error){try{record=await api(path)}catch{throw Error(error.message+' · 运行编号 '+id+'，可在运行记录中核对')}}
+ const until=Date.now()+480000;
+ while(record.status==='running'&&Date.now()<until){
+  say('后端正在执行 · '+id);
+  await new Promise(done=>setTimeout(done,1200));record=await api(path);
+ }
+ return record;
+}
 function pc(){
  const box=el('section',undefined,'box'),input=el('textarea');input.value=inputCache.get(f.id)??f.example;input.oninput=()=>inputCache.set(f.id,input.value);
  box.append(el('h2',f.title+' Agent'),el('small','后端执行已发布版本 v'+state.version));field(box,'业务输入',input);const result=el('div',undefined,'result');
  const run=btn('运行 Agent',async()=>{loading=true;run.disabled=true;feature.disabled=true;say('正在执行发布流程…');try{
- const data=await api(f.id+'/run',{id:crypto.randomUUID(),version:state.version,input:input.value});evidence(result,data);say(states[data.status]||data.status)
+ const data=await submitRun(f.id,state.version,input.value);evidence(result,data);say(states[data.status]||data.status)
  }finally{loading=false;feature.disabled=false;run.disabled=false}},'primary');box.append(run,result);content.append(box);
 }
 function render(){
