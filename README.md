@@ -2,9 +2,44 @@
 
 **English** · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md)
 
-## Executable Agent workbench
+Agent Studio runs the workflows you publish on a visual canvas using **Spring AI 2.0.3**. In the packing workflow, for example, a user describes a trip, the retriever finds packing guidance, the model extracts the number of days, and a Java tool calculates clothing quantities. Desktop and mobile use the same published graph. Each run records the path it took.
 
-Build and publish a workflow for five business tools. Inspect retrieval citations, model and tool calls, bounded loops, approval, storage and estimated usage in the run trace. [Setup and configuration](agent-workbench/README.md) · [Online workbench](https://aitools.ynsmhy.com/open-source/)
+[Open the live workbench](https://aitools.ynsmhy.com/open-source/) · [Try the mobile view](https://aitools.ynsmhy.com/open-source/lab/agent/?mobile=1&app=packing-list) · [v0.2.0 source](https://github.com/hellomaybe/Agent-Studio/tree/v0.2.0)
+
+## Run the packing agent
+
+1. Open the [packing workflow](https://aitools.ynsmhy.com/open-source/lab/agent/?app=packing-list). Select the tool node **执行业务工具** and set **途中洗衣** to **可以洗衣** (laundry available). Save the draft (**保存草稿**), then publish it (**发布流程**).
+2. Under **PC 试用**, enter `出行六天，请输出天数` (“a six-day trip”) and click **运行 Agent**. When the model extracts six days, the tool returns **2 tops and 3 items of underwear**. In **手机预览** (mobile preview), enter `9`. With the same published rule, the result is **3 tops and 5 items of underwear**.
+3. Open **查看执行画布** to replay the run. Select the retrieval node to inspect the source passages and scores, the model node for its prompt, response, latency and tokens, or the storage node for the result written to H2. Earlier runs keep their original graph version.
+
+![Packing workflow replay with the executed path highlighted and the Doubao response and token counts in the inspector](docs/images/packing-agent-replay.png)
+
+## Five runnable agents
+
+| Agent | What to try |
+| --- | --- |
+| Quote calculator | Extract line items, quantities and prices. Change the tool’s tax rate and compare the tax and total calculated by the Java engine. |
+| Batch file renaming | Change the naming template and preview the new names. The default graph waits for approval before saving the result. Files on your device are untouched. |
+| Packing list | Extract the trip length and calculate quantities with or without laundry. The model node also supports a native call to the packing tool. |
+| Subtitle timeline | Check cue timings or apply a repair, then compare an overlap with the resulting timestamps. |
+| Title checker | Retrieve publishing guidelines, generate a title and check it against platform rules. A failed check can loop back for revision within the call and budget limits. |
+
+The hosted demo uses **Doubao Seed 2.1 Lite**. Each browser gets a private one-hour workspace. Hosted retrieval uses local sparse vectors; self-hosted installations can connect an embedding service and cache its index in H2. The hosted service shares a **CNY 10 daily estimated budget**, reset on the UTC day boundary. Model-backed runs send the input, selected passages and relevant context to the provider. Use sample data.
+
+## Run the Agent workbench locally
+
+Install JDK 17 and Maven. Set a private database password in the server environment variable `AGENT_DEMO_DB_PASSWORD`, then run these commands from the repository root:
+
+```sh
+mvn -f agent-workbench/pom.xml verify
+cd agent-workbench
+java -jar target/agent-workbench-0.2.0.jar site
+```
+
+Open the [local canvas](http://127.0.0.1:29479/open-source/lab/agent/). Without a chat model, new templates can run their tools on structured input. To enable real model calls, configure the provider endpoint, model, credentials, rates and budget on the server. [Workbench configuration and tests](agent-workbench/README.md)
+
+<details>
+<summary>Meeting and feedback editor — setup, debugging and developer guide</summary>
 
 Agent Studio is a visual editor for building and running AI workflows on your own machine. Connect nodes on a Vue Flow canvas, map fields between steps, and pause a run for human approval. The Java backend keeps track of versions and resumes waiting runs. Model nodes use Spring AI 2.0.3. Try the two built-in workflows without an API key.
 
@@ -124,6 +159,8 @@ npm run test:e2e
 Browser tests start their own services and an in-memory database on loopback ports 18181 and 14173. The MySQL persistence test requires Docker. From the repository root, run `mvn -f backend/pom.xml -Pmysql verify`, then `python tests/check_persistence.py --mysql`. The script starts a temporary MySQL 8.4 container, starts the same backend JAR twice, and checks drafts, snapshots, and approval results across the restart.
 
 SQL formatting rules are in `.sqlfluff`. Run `sqlfluff lint backend/src/main/resources/db/migration` to check migrations. CI uses SQLFluff 3.4.2.
+
+</details>
 
 ## License
 

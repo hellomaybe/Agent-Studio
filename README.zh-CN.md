@@ -2,9 +2,44 @@
 
 [English](README.md) · **简体中文** · [Deutsch](README.de.md)
 
-## 可执行 Agent 工作台
+Agent Studio 用 **Spring AI 2.0.3** 把画布上发布的流程交给后端执行。以行李清单为例：用户输入行程，知识检索节点找到打包规范，模型提取天数，Java 工具计算衣物数量。PC 和手机网页使用同一个发布版本，每次运行都能沿实际经过的节点回放。
 
-可在流程画布配置并发布报价、批量改名、行李清单、字幕和标题五项业务，PC 和手机按版本运行。回放可查看知识检索引用、模型及工具调用、循环、人工确认、结果存储与用量估算。独立模块使用 JDK 17、Spring AI 2.0.3 和 H2，从仓库根目录执行 `mvn -f agent-workbench/pom.xml verify`，配置专用服务端模型及预算后启动。[构建与配置](agent-workbench/README.md) · [在线工作台](https://aitools.ynsmhy.com/open-source/)
+[打开在线画布](https://aitools.ynsmhy.com/open-source/) · [手机网页体验](https://aitools.ynsmhy.com/open-source/lab/agent/?mobile=1&app=packing-list) · [v0.2.0 源码](https://github.com/hellomaybe/Agent-Studio/tree/v0.2.0)
+
+## 跑一次行李清单 Agent
+
+1. 在[行李清单画布](https://aitools.ynsmhy.com/open-source/lab/agent/?app=packing-list)点 **执行业务工具**，把「途中洗衣」设为「可以洗衣」。点击 **保存草稿**，再点 **发布流程**。
+2. 在 **PC 试用** 输入 `出行六天，请输出天数`，点击 **运行 Agent**。当模型提取出 6 天时，工具返回 **2 件上衣、3 件内衣**。切到 **手机预览**，输入 `9`，同一配置会得到 **3 件上衣、5 件内衣**。
+3. 点击 **查看执行画布**。选「知识检索」看命中文档、原文和分数；选「调用大模型」看提示词、返回值、耗时及 token；选「存储结果」看写入 H2 的业务结果。历史运行始终引用当时发布的图。
+
+![线上行李清单运行回放，绿色连线标出执行路径，右侧显示豆包实际返回的天数与用量](docs/images/packing-agent-replay.png)
+
+## 五个可运行的 Agent
+
+| 应用 | 在画布上可以验证什么 |
+| --- | --- |
+| 报价计税 | 从报价明细提取项目、数量和单价；切换工具节点税率，比较计算器返回的税额与合计。 |
+| 批量改名 | 更换命名模板，预览新文件名；默认路径等待人工确认后保存结果。访客磁盘上的文件保持原样。 |
+| 行李清单 | 从行程提取天数，用洗衣条件计算数量；模型节点还支持让模型原生请求行李工具。 |
+| 字幕时间轴 | 检查字幕时间段，或运行修复规则；比较原始重叠位置与输出时间。 |
+| 标题检查 | 检索发布规范、生成候选标题并调用规则引擎；校验失败可沿回边修订，模型轮数和预算限制循环。 |
+
+官网演示使用 **豆包 Seed 2.1 Lite**，每个浏览器的独立工作区有效期为一小时。公网 RAG 使用本地稀疏向量；自托管版可配置 Embedding 服务并在 H2 缓存索引。演示服务共享每天 **10 元**的估算预算，按 UTC 日重置。带模型节点的流程会把输入、选中的知识片段及相关上下文发送给模型供应商，请使用演示资料。
+
+## 本机启动 Agent 画布
+
+需要 JDK 17 和 Maven。先在服务端环境变量 `AGENT_DEMO_DB_PASSWORD` 中设置自己的数据库密码，再从仓库根目录执行：
+
+```sh
+mvn -f agent-workbench/pom.xml verify
+cd agent-workbench
+java -jar target/agent-workbench-0.2.0.jar site
+```
+
+打开[本机画布](http://127.0.0.1:29479/open-source/lab/agent/)。未配置聊天模型时，新模板可直接用结构化输入执行业务工具。要启用真实模型调用，请配置服务端模型地址、模型名、凭证、单价及预算。[工作台配置与测试说明](agent-workbench/README.md)
+
+<details>
+<summary>会议待办与反馈分流编辑器：启动、调试与开发指南</summary>
 
 Agent Studio 是一个面向本机单操作者的流程编辑器。业务人员在 Vue Flow 画布上选择能力、连接分支、映射字段和运行样例。Java 服务负责版本、执行、等待与恢复，模型节点通过 Spring AI 2.0.3 调用供应商。首次体验可以使用内置样例，无需密钥。
 
@@ -124,6 +159,8 @@ npm run test:e2e
 浏览器测试自动启动独立服务和内存数据库，使用回环端口 18181 和 14173。MySQL 验收需要 Docker：在项目根目录运行 `mvn -f backend/pom.xml -Pmysql verify`，再运行 `python tests/check_persistence.py --mysql`。脚本创建一次性 MySQL 8.4 容器，两次启动同一个后端 JAR 并核对草稿、运行快照和确认结果。
 
 SQL 格式规则见 `.sqlfluff`，校验命令为 `sqlfluff lint backend/src/main/resources/db/migration`。CI 固定使用 SQLFluff 3.4.2。
+
+</details>
 
 ## 许可证
 

@@ -2,9 +2,44 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · **Deutsch**
 
-## Ausführbarer Agent-Editor
+Agent Studio führt die auf der visuellen Arbeitsfläche veröffentlichten Workflows mit **Spring AI 2.0.3** aus. Bei der Packliste beschreibt der Benutzer seine Reise. Die Wissenssuche liefert passende Hinweise, das Modell ermittelt die Reisedauer und ein Java-Werkzeug berechnet die benötigten Kleidungsstücke. Desktop und mobile Ansicht verwenden dieselbe veröffentlichte Version. Der Verlauf zeigt den tatsächlich durchlaufenen Pfad.
 
-Fünf Fachwerkzeuge lassen sich auf der Arbeitsfläche konfigurieren und versioniert veröffentlichen. Desktop und mobile Ansicht verwenden dieselbe Version. Der Verlauf zeigt Quellen, Modell- und Werkzeugaufrufe, Schleifen, Freigaben, gespeicherte Ergebnisse und geschätzte Kosten. [Installation und Konfiguration](agent-workbench/README.md) · [Online-Arbeitsfläche](https://aitools.ynsmhy.com/open-source/)
+[Online-Arbeitsfläche öffnen](https://aitools.ynsmhy.com/open-source/) · [Mobile Ansicht ausprobieren](https://aitools.ynsmhy.com/open-source/lab/agent/?mobile=1&app=packing-list) · [Quellcode von v0.2.0](https://github.com/hellomaybe/Agent-Studio/tree/v0.2.0)
+
+## Den Packlisten-Agenten ausprobieren
+
+1. Öffne den [Packlisten-Workflow](https://aitools.ynsmhy.com/open-source/lab/agent/?app=packing-list). Wähle den Werkzeugknoten **执行业务工具** und setze **途中洗衣** auf **可以洗衣** (Waschen unterwegs möglich). Speichere den Entwurf mit **保存草稿** und veröffentliche ihn mit **发布流程**.
+2. Gib unter **PC 试用** den Text `出行六天，请输出天数` („Reisedauer sechs Tage“) ein und klicke auf **运行 Agent**. Erkennt das Modell sechs Tage, berechnet das Werkzeug **2 Oberteile und 3 Stück Unterwäsche**. Gib in der mobilen Vorschau **手机预览** die Zahl `9` ein. Mit derselben Regel ergeben sich **3 Oberteile und 5 Stück Unterwäsche**.
+3. Öffne die Verlaufsansicht mit **查看执行画布**. Am Suchknoten siehst du die gefundenen Textstellen samt Quelle und Ähnlichkeitswert. Der Modellknoten zeigt Prompt, Antwort, Laufzeit und Tokenverbrauch. Der Speicherknoten zeigt das in H2 gespeicherte Ergebnis. Frühere Durchläufe behalten ihre ursprüngliche Graphversion.
+
+![Packlisten-Durchlauf mit grün markiertem Ausführungspfad sowie Modellantwort und Tokenverbrauch im rechten Bereich](docs/images/packing-agent-replay.png)
+
+## Fünf ausführbare Agenten
+
+| Agent | Das kannst du ausprobieren |
+| --- | --- |
+| Angebotskalkulation | Positionen, Mengen und Preise extrahieren, den Steuersatz ändern und die vom Java-Werkzeug berechneten Steuer- und Gesamtbeträge vergleichen. |
+| Dateien umbenennen | Das Namensmuster ändern und die neuen Dateinamen prüfen. Der Standardablauf wartet vor dem Speichern auf eine Freigabe. Die Dateien auf deinem Gerät bleiben erhalten. |
+| Packliste | Die Reisedauer ermitteln und die Kleidermenge mit oder ohne Waschmöglichkeit berechnen. Der Modellknoten unterstützt auch einen nativen Aufruf des Packlisten-Werkzeugs. |
+| Untertitel | Zeitangaben prüfen oder korrigieren und eine Überlappung mit den ausgegebenen Zeitstempeln vergleichen. |
+| Titelprüfung | Veröffentlichungsregeln abrufen, einen Titel erzeugen und prüfen. Bei einem Fehler kann das Modell den Titel überarbeiten, solange Aufruflimit und Budget es zulassen. |
+
+Die Online-Demo verwendet **Doubao Seed 2.1 Lite**. Jeder Browser erhält einen eigenen Arbeitsbereich für eine Stunde. Die gehostete Wissenssuche verwendet lokale dünn besetzte Vektoren. Bei einer eigenen Installation kannst du einen Embedding-Dienst anbinden und den Index in H2 speichern. Für alle Besucher zusammen gilt ein **Tagesbudget von 10 CNY auf Basis geschätzter Kosten**. Es wird um Mitternacht UTC zurückgesetzt. Modellaufrufe übertragen Eingabe, ausgewählte Textstellen und relevanten Kontext an den Anbieter. Verwende Beispieldaten.
+
+## Die Agent-Arbeitsfläche lokal starten
+
+Du brauchst JDK 17 und Maven. Hinterlege ein eigenes Datenbankpasswort in der Umgebungsvariablen `AGENT_DEMO_DB_PASSWORD` des Servers und führe im Stammverzeichnis des Repositorys folgende Befehle aus:
+
+```sh
+mvn -f agent-workbench/pom.xml verify
+cd agent-workbench
+java -jar target/agent-workbench-0.2.0.jar site
+```
+
+Öffne die [lokale Arbeitsfläche](http://127.0.0.1:29479/open-source/lab/agent/). Ohne Chatmodell können neue Vorlagen ihre Werkzeuge mit strukturierten Eingaben ausführen. Für echte Modellaufrufe hinterlegst du Endpunkt, Modell, Zugangsdaten, Preise und Budget auf dem Server. [Konfiguration und Tests der Arbeitsfläche](agent-workbench/README.md)
+
+<details>
+<summary>Editor für Besprechungsaufgaben und Feedback – Einrichtung, Tests und Entwicklung</summary>
 
 Mit Agent Studio lassen sich KI-Workflows für einen einzelnen Benutzer auf dem eigenen Rechner erstellen und ausführen. Auf der Vue-Flow-Oberfläche verbindest du Schritte, ordnest Eingabefelder zu und legst fest, wann ein Mensch eine Freigabe erteilen soll. Das Java-Backend verwaltet Versionen und setzt wartende Durchläufe fort. Modellknoten verwenden Spring AI 2.0.3. Die beiden Beispiele kannst du ohne API-Schlüssel ausprobieren.
 
@@ -124,6 +159,8 @@ npm run test:e2e
 Die Browsertests starten eigene Dienste und eine In-Memory-Datenbank. Sie verwenden die lokalen Ports 18181 und 14173. Der MySQL-Persistenztest benötigt Docker. Führe im Stammverzeichnis zuerst `mvn -f backend/pom.xml -Pmysql verify` und danach `python tests/check_persistence.py --mysql` aus. Das Skript erstellt einen temporären MySQL-8.4-Container, startet dieselbe Backend-JAR zweimal und prüft, ob Entwürfe, Momentaufnahmen und Freigaben den Neustart überdauern.
 
 Die SQL-Formatregeln stehen in `.sqlfluff`. Mit `sqlfluff lint backend/src/main/resources/db/migration` prüfst du die Migrationen. Die CI verwendet SQLFluff 3.4.2.
+
+</details>
 
 ## Lizenz
 
