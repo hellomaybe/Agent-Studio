@@ -6,24 +6,7 @@ Agent Studio 是一套基于 Spring AI 2.0.3 的可视化业务 Agent 工作台�
 
 ## 技术架构
 
-```mermaid
-flowchart TD
-    UI["画布编辑器 · PC · 手机网页"] --> API["AgentApi：工作区与 HTTP 接口"]
-    API --> G["AgentGraph：图定义、参数、端口校验"]
-    G --> V["H2：草稿修订与发布版本"]
-    API --> R["AgentRuntime：按指定版本解释执行"]
-    V --> R
-    R --> K["AgentKnowledge：分块、索引与检索"]
-    K -->|自托管模型向量模式| E["Spring AI OpenAiEmbeddingModel"]
-    K -->|来源、原文和分数| R
-    R --> M["AgentModel：Prompt 与 OpenAiChatModel"]
-    M --> P["兼容模型服务 · 官网使用火山方舟豆包"]
-    P -->|文本、工具调用参数和用量| M
-    R --> T["Spring AI ToolCallback"]
-    T --> J["五个 Java 业务引擎"]
-    R --> DB["AgentRepository：节点轨迹、业务结果、预算账本"]
-    DB --> UI
-```
+![运行架构：画布经 AgentApi 发布和运行图，AgentRuntime 调用检索、Spring AI 模型与工具，AgentRepository 保存可回放的轨迹、结果和预算账本。](images/architecture-detailed-zh-CN.png)
 
 这张图描述 v0.2.0 的 `agent-workbench` 模块。它使用 JDK 17 的 HTTP 服务接收请求，前端用 JavaScript 和 SVG 绘制可操作的画布。仓库根目录的 `frontend/` 与 `backend/` 还提供另一套 Vue Flow 和 Spring Boot 会议/反馈编辑器，两套实现可以分别启动。[工作台入口](../agent-workbench/src/main/java/studio/lab/AgentApi.java) · [画布代码](../agent-workbench/site/graph.js) · [模块依赖](../agent-workbench/pom.xml)
 

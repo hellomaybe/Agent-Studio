@@ -28,16 +28,7 @@ The hosted demo uses **Doubao Seed 2.1 Lite**. Each browser gets a private one-h
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    UI["Canvas · PC · mobile web"] --> API["AgentApi · workspace and version"]
-    API --> R["AgentRuntime · execute published graph"]
-    R --> K["AgentKnowledge · retrieve passages"]
-    R --> M["AgentModel · Spring AI model call"]
-    R --> T["ToolCallback · Java business tool"]
-    R --> DB["AgentRepository · H2 storage"]
-    API --> DB
-```
+![Agent Studio architecture: the API passes a published graph to the runtime, which retrieves passages, calls the model, runs Java tools and records results in H2.](docs/images/architecture-en.png)
 
 Publishing pins the prompt, retrieval settings, tool input bindings and edges. Each run loads a specific graph version. A failed check can send feedback to the model for another attempt, and a batch rename can pause for approval. The run ID links the original graph to the path taken and the stored result. [Graph definition](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [Runtime](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
 

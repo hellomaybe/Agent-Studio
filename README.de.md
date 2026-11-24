@@ -28,16 +28,7 @@ Die Online-Demo verwendet **Doubao Seed 2.1 Lite**. Jeder Browser erhält einen 
 
 ## Technische Architektur
 
-```mermaid
-flowchart TD
-    UI["Editor · PC · mobile Ansicht"] --> API["AgentApi · Arbeitsbereich und Version"]
-    API --> R["AgentRuntime · veröffentlichten Graphen ausführen"]
-    R --> K["AgentKnowledge · Textstellen abrufen"]
-    R --> M["AgentModel · Modellaufruf mit Spring AI"]
-    R --> T["ToolCallback · Java-Fachwerkzeug"]
-    R --> DB["AgentRepository · H2-Speicher"]
-    API --> DB
-```
+![Agent Studio: Die API übergibt den veröffentlichten Graphen an die Laufzeitumgebung. Diese ruft Textstellen, Modell und Java-Werkzeuge auf und speichert Ergebnisse in H2.](docs/images/architecture-de.png)
 
 Beim Veröffentlichen speichert die Arbeitsfläche Prompt, Sucheinstellungen, Feldzuordnungen und Verbindungen als Version. Jeder Durchlauf lädt die gewählte Version. Schlägt eine Prüfung fehl, kann das Modell den Ablehnungsgrund für einen weiteren Versuch verwenden. Beim Umbenennen von Dateien kann der Ablauf auf eine Freigabe warten. Über die Laufkennung lassen sich der ursprüngliche Graph, der tatsächlich durchlaufene Pfad und das gespeicherte Ergebnis abrufen. [Graphdefinition](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [Ausführungslogik](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
 

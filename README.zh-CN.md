@@ -28,16 +28,7 @@ Agent Studio 用 **Spring AI 2.0.3** 把画布上发布的流程交给后端执�
 
 ## 技术架构
 
-```mermaid
-flowchart TD
-    UI["画布 · PC · 手机网页"] --> API["AgentApi · 工作区与版本"]
-    API --> R["AgentRuntime · 按发布图执行"]
-    R --> K["AgentKnowledge · 检索文档片段"]
-    R --> M["AgentModel · Spring AI 模型调用"]
-    R --> T["ToolCallback · Java 业务工具"]
-    R --> DB["AgentRepository · H2 存储"]
-    API --> DB
-```
+![Agent Studio 技术架构：画布通过 API 提交任务，执行器按发布版本检索资料、调用模型与 Java 工具，并将结果写入 H2。](docs/images/architecture-zh-CN.png)
 
 发布时，工作台保存提示词、检索设置、工具输入绑定和节点连线。提交任务时，后端读取指定版本。校验失败可以带着原因回到模型节点；批量改名可停下来等待人工确认。每个运行编号都能找回当时的图、实际路径和结果。[图定义](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [执行器](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
 
