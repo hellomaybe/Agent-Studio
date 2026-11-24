@@ -2,6 +2,10 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · **Deutsch**
 
+## Ausführbarer Agent-Editor
+
+Fünf Fachwerkzeuge lassen sich auf der Arbeitsfläche konfigurieren und versioniert veröffentlichen. Desktop und mobile Ansicht verwenden dieselbe Version. Der Verlauf zeigt Quellen, Modell- und Werkzeugaufrufe, Schleifen, Freigaben, gespeicherte Ergebnisse und geschätzte Kosten. [Installation und Konfiguration](agent-workbench/README.md) · [Online-Arbeitsfläche](https://aitools.ynsmhy.com/open-source/)
+
 Mit Agent Studio lassen sich KI-Workflows für einen einzelnen Benutzer auf dem eigenen Rechner erstellen und ausführen. Auf der Vue-Flow-Oberfläche verbindest du Schritte, ordnest Eingabefelder zu und legst fest, wann ein Mensch eine Freigabe erteilen soll. Das Java-Backend verwaltet Versionen und setzt wartende Durchläufe fort. Modellknoten verwenden Spring AI 2.0.3. Die beiden Beispiele kannst du ohne API-Schlüssel ausprobieren.
 
 | Lokaler Workflow | Was du ausprobieren kannst |

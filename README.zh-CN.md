@@ -2,6 +2,10 @@
 
 [English](README.md) · **简体中文** · [Deutsch](README.de.md)
 
+## 可执行 Agent 工作台
+
+可在流程画布配置并发布报价、批量改名、行李清单、字幕和标题五项业务，PC 和手机按版本运行。回放可查看知识检索引用、模型及工具调用、循环、人工确认、结果存储与用量估算。独立模块使用 JDK 17、Spring AI 2.0.3 和 H2，从仓库根目录执行 `mvn -f agent-workbench/pom.xml verify`，配置专用服务端模型及预算后启动。[构建与配置](agent-workbench/README.md) · [在线工作台](https://aitools.ynsmhy.com/open-source/)
+
 Agent Studio 是一个面向本机单操作者的流程编辑器。业务人员在 Vue Flow 画布上选择能力、连接分支、映射字段和运行样例。Java 服务负责版本、执行、等待与恢复，模型节点通过 Spring AI 2.0.3 调用供应商。首次体验可以使用内置样例，无需密钥。
 
 | 入口 | 可以体验的流程 |

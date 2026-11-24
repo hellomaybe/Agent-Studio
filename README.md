@@ -2,6 +2,10 @@
 
 **English** · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md)
 
+## Executable Agent workbench
+
+Build and publish a workflow for five business tools. Inspect retrieval citations, model and tool calls, bounded loops, approval, storage and estimated usage in the run trace. [Setup and configuration](agent-workbench/README.md) · [Online workbench](https://aitools.ynsmhy.com/open-source/)
+
 Agent Studio is a visual editor for building and running AI workflows on your own machine. Connect nodes on a Vue Flow canvas, map fields between steps, and pause a run for human approval. The Java backend keeps track of versions and resumes waiting runs. Model nodes use Spring AI 2.0.3. Try the two built-in workflows without an API key.
 
 | Local workflow | What to try |
