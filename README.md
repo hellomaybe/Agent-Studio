@@ -26,6 +26,29 @@ Agent Studio runs the workflows you publish on a visual canvas using **Spring AI
 
 The hosted demo uses **Doubao Seed 2.1 Lite**. Each browser gets a private one-hour workspace. Hosted retrieval uses local sparse vectors; self-hosted installations can connect an embedding service and cache its index in H2. The hosted service shares a **CNY 10 daily estimated budget**, reset on the UTC day boundary. Model-backed runs send the input, selected passages and relevant context to the provider. Use sample data.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    UI["Canvas · PC · mobile web"] --> API["AgentApi · workspace and version"]
+    API --> R["AgentRuntime · execute published graph"]
+    R --> K["AgentKnowledge · retrieve passages"]
+    R --> M["AgentModel · Spring AI model call"]
+    R --> T["ToolCallback · Java business tool"]
+    R --> DB["AgentRepository · H2 storage"]
+    API --> DB
+```
+
+Publishing pins the prompt, retrieval settings, tool input bindings and edges. Each run loads a specific graph version. A failed check can send feedback to the model for another attempt, and a batch rename can pause for approval. The run ID links the original graph to the path taken and the stored result. [Graph definition](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [Runtime](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
+
+| Stage | How Spring AI 2.0.3 and the workbench fit together |
+| --- | --- |
+| Retrieval and context | The hosted service retrieves passages from workspace documents. Self-hosted installations can generate embeddings with `OpenAiEmbeddingModel` and cache the index in H2. The workbench adds the matching text, its source and an optional summary of the last result to the prompt. |
+| Inference and tools | `OpenAiChatModel.call(Prompt)` sends the model request. In native tool-calling mode, the runtime checks the returned function name and arguments, then dispatches the workflow’s permitted Java tool through `ToolCallback`. |
+| Budget and replay | The workbench reserves budget before the call and estimates cost from the provider’s input and output token counts at the configured rates. Replay exposes model usage, branch decisions and the stored result. |
+
+**One recorded call.** In a hosted test for a nine-day trip, retrieval found the packing guidelines and Doubao requested `packing_list({"text":"9"})`. The Java tool calculated quantities under the published laundry rule. The provider reported 619 input tokens and 208 output tokens for that call, an estimated CNY 0.0010568. [Architecture walkthrough and source map (Chinese)](docs/architecture.zh-CN.md)
+
 ## Run the Agent workbench locally
 
 Install JDK 17 and Maven. Set a private database password in the server environment variable `AGENT_DEMO_DB_PASSWORD`, then run these commands from the repository root:

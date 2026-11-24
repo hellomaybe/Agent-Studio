@@ -26,6 +26,29 @@ Agent Studio 用 **Spring AI 2.0.3** 把画布上发布的流程交给后端执�
 
 官网演示使用 **豆包 Seed 2.1 Lite**，每个浏览器的独立工作区有效期为一小时。公网 RAG 使用本地稀疏向量；自托管版可配置 Embedding 服务并在 H2 缓存索引。演示服务共享每天 **10 元**的估算预算，按 UTC 日重置。带模型节点的流程会把输入、选中的知识片段及相关上下文发送给模型供应商，请使用演示资料。
 
+## 技术架构
+
+```mermaid
+flowchart TD
+    UI["画布 · PC · 手机网页"] --> API["AgentApi · 工作区与版本"]
+    API --> R["AgentRuntime · 按发布图执行"]
+    R --> K["AgentKnowledge · 检索文档片段"]
+    R --> M["AgentModel · Spring AI 模型调用"]
+    R --> T["ToolCallback · Java 业务工具"]
+    R --> DB["AgentRepository · H2 存储"]
+    API --> DB
+```
+
+发布时，工作台保存提示词、检索设置、工具输入绑定和节点连线。提交任务时，后端读取指定版本。校验失败可以带着原因回到模型节点；批量改名可停下来等待人工确认。每个运行编号都能找回当时的图、实际路径和结果。[图定义](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [执行器](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
+
+| 环节 | Spring AI 2.0.3 与工作台如何配合 |
+| --- | --- |
+| 检索与上下文 | 官网从当前工作区检索文本片段，自托管版可用 `OpenAiEmbeddingModel` 生成向量并在 H2 缓存索引。工作台把命中原文、来源和可选的上次结果摘要加入提示词。 |
+| 推理与工具 | `OpenAiChatModel.call(Prompt)` 发起模型请求。在原生工具调用模式下，工作台检查模型返回的函数名和参数，再通过 `ToolCallback` 执行当前流程授权的 Java 工具。 |
+| 预算与回放 | 工作台在请求前预留预算，按供应商返回的输入、输出 token 和配置单价估算费用。模型用量、分支选择和存储结果均可在运行回放中核对。 |
+
+**一次真实调用：** 在九天行程的公网验收中，检索命中《出行打包规范》，豆包请求 `packing_list({"text":"9"})`。Java 工具按已发布的洗衣规则计算件数。该轮实际返回 619 个输入 token 和 208 个输出 token，估算费用为 0.0010568 元。[完整架构说明与源码索引](docs/architecture.zh-CN.md)
+
 ## 本机启动 Agent 画布
 
 需要 JDK 17 和 Maven。先在服务端环境变量 `AGENT_DEMO_DB_PASSWORD` 中设置自己的数据库密码，再从仓库根目录执行：

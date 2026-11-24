@@ -26,6 +26,29 @@ Agent Studio führt die auf der visuellen Arbeitsfläche veröffentlichten Workf
 
 Die Online-Demo verwendet **Doubao Seed 2.1 Lite**. Jeder Browser erhält einen eigenen Arbeitsbereich für eine Stunde. Die gehostete Wissenssuche verwendet lokale dünn besetzte Vektoren. Bei einer eigenen Installation kannst du einen Embedding-Dienst anbinden und den Index in H2 speichern. Für alle Besucher zusammen gilt ein **Tagesbudget von 10 CNY auf Basis geschätzter Kosten**. Es wird um Mitternacht UTC zurückgesetzt. Modellaufrufe übertragen Eingabe, ausgewählte Textstellen und relevanten Kontext an den Anbieter. Verwende Beispieldaten.
 
+## Technische Architektur
+
+```mermaid
+flowchart TD
+    UI["Editor · PC · mobile Ansicht"] --> API["AgentApi · Arbeitsbereich und Version"]
+    API --> R["AgentRuntime · veröffentlichten Graphen ausführen"]
+    R --> K["AgentKnowledge · Textstellen abrufen"]
+    R --> M["AgentModel · Modellaufruf mit Spring AI"]
+    R --> T["ToolCallback · Java-Fachwerkzeug"]
+    R --> DB["AgentRepository · H2-Speicher"]
+    API --> DB
+```
+
+Beim Veröffentlichen speichert die Arbeitsfläche Prompt, Sucheinstellungen, Feldzuordnungen und Verbindungen als Version. Jeder Durchlauf lädt die gewählte Version. Schlägt eine Prüfung fehl, kann das Modell den Ablehnungsgrund für einen weiteren Versuch verwenden. Beim Umbenennen von Dateien kann der Ablauf auf eine Freigabe warten. Über die Laufkennung lassen sich der ursprüngliche Graph, der tatsächlich durchlaufene Pfad und das gespeicherte Ergebnis abrufen. [Graphdefinition](agent-workbench/src/main/java/studio/lab/AgentGraph.java) · [Ausführungslogik](agent-workbench/src/main/java/studio/lab/AgentRuntime.java)
+
+| Schritt | Zusammenspiel von Spring AI 2.0.3 und Arbeitsfläche |
+| --- | --- |
+| Wissenssuche und Kontext | Die Online-Demo sucht Textstellen in den Dokumenten des Arbeitsbereichs. Bei eigener Installation kann `OpenAiEmbeddingModel` Vektoren erzeugen. Die Arbeitsfläche speichert den Index in H2 und ergänzt den Prompt um Treffer, Quellen und auf Wunsch die Zusammenfassung des letzten Ergebnisses. |
+| Modell und Werkzeuge | `OpenAiChatModel.call(Prompt)` sendet die Anfrage. Beim nativen Funktionsaufruf prüft die Laufzeitumgebung den zurückgegebenen Funktionsnamen und die Argumente. Anschließend führt sie das im Workflow zugelassene Java-Werkzeug über `ToolCallback` aus. |
+| Budget und Verlauf | Vor dem Aufruf reserviert die Arbeitsfläche Budget. Aus den gemeldeten Eingabe- und Ausgabetokens und den hinterlegten Preisen schätzt sie die Kosten. Die Verlaufsansicht zeigt Verbrauch, Verzweigungen und gespeicherte Ergebnisse. |
+
+**Ein aufgezeichneter Aufruf.** Bei einem Test mit neun Reisetagen fand die Suche die Packrichtlinie. Doubao forderte `packing_list({"text":"9"})` an. Das Java-Werkzeug berechnete die Mengen nach der veröffentlichten Wäscheregel. Der Anbieter meldete 619 Eingabe- und 208 Ausgabetokens. Die geschätzten Kosten für diesen Aufruf betrugen 0,0010568 CNY. [Architektur und Quellcode-Verweise (Chinesisch)](docs/architecture.zh-CN.md)
+
 ## Die Agent-Arbeitsfläche lokal starten
 
 Du brauchst JDK 17 und Maven. Hinterlege ein eigenes Datenbankpasswort in der Umgebungsvariablen `AGENT_DEMO_DB_PASSWORD` des Servers und führe im Stammverzeichnis des Repositorys folgende Befehle aus:
