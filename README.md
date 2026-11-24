@@ -40,6 +40,12 @@ Publishing pins the prompt, retrieval settings, tool input bindings and edges. E
 
 **One recorded call.** In a hosted test for a nine-day trip, retrieval found the packing guidelines and Doubao requested `packing_list({"text":"9"})`. The Java tool calculated quantities under the published laundry rule. The provider reported 619 input tokens and 208 output tokens for that call, an estimated CNY 0.0010568. [Architecture walkthrough and source map (Chinese)](docs/architecture.zh-CN.md)
 
+## Why this service uses Spring AI 2.0.3 in production
+
+Consider a quote. The model extracts the items, quantities and prices. The existing Java calculator applies the tax and rounding rules. Spring AI lets the workflow invoke that calculator through a `ToolCallback` in the same JVM. A rule change ships as one implementation in the hosted and self-hosted workbenches. Pinning 2.0.3 gives operators a reproducible baseline for the model requests, function arguments and usage metadata verified by this project. [Model adapter](agent-workbench/src/main/java/studio/lab/AgentModel.java) · [Business tools](agent-workbench/src/main/java/studio/lab/Features.java)
+
+Python can also run production agents. For this repository, a Python runtime would need a way to reuse five existing Java tools. Porting them requires parity tests for both implementations. Calling them as Java services introduces API versioning, network timeouts and retry handling. A team with existing Python tools and deployment infrastructure faces a different trade-off. Either stack needs tests for duplicate submissions, approvals, workspace isolation and cost accounting. [Design decision in Chinese](docs/architecture.zh-CN.md#生产选型) · [LangGraph persistence in Python](https://docs.langchain.com/oss/python/langgraph/persistence)
+
 ## Run the Agent workbench locally
 
 Install JDK 17 and Maven. Set a private database password in the server environment variable `AGENT_DEMO_DB_PASSWORD`, then run these commands from the repository root:

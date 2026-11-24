@@ -40,6 +40,12 @@ Agent Studio 用 **Spring AI 2.0.3** 把画布上发布的流程交给后端执�
 
 **一次真实调用：** 在九天行程的公网验收中，检索命中《出行打包规范》，豆包请求 `packing_list({"text":"9"})`。Java 工具按已发布的洗衣规则计算件数。该轮实际返回 619 个输入 token 和 208 个输出 token，估算费用为 0.0010568 元。[完整架构说明与源码索引](docs/architecture.zh-CN.md)
 
+## 生产环境为何选用 Spring AI 2.0.3
+
+以报价为例：模型从输入中提取项目、数量和单价，既有的 Java 计税引擎负责金额与舍入。用 Spring AI 接入模型后，工作流可以在同一 JVM 内通过 `ToolCallback` 调用原有引擎。调整一次计税规则，自托管工作台和线上流程就能随版本交付同一份实现。项目锁定 2.0.3，让部署者可以复现已经验证的模型请求、函数参数和用量读取行为。[模型适配器](agent-workbench/src/main/java/studio/lab/AgentModel.java) · [业务工具](agent-workbench/src/main/java/studio/lab/Features.java)
+
+Python 同样能承载生产 Agent。对这个已有五个 Java 工具的项目，采用 Python 编排意味着要决定如何复用它们：重写规则需要验证两份实现的结果一致；保留 Java 服务并通过网络调用，则要处理接口版本、超时和重试。如果团队已有 Python 工具和运维体系，这笔成本就会不同。无论选择哪种栈，重复提交、人工审批、工作区隔离和费用核对都要单独验证。[生产选型详解](docs/architecture.zh-CN.md#生产选型) · [Python LangGraph 持久化机制](https://docs.langchain.com/oss/python/langgraph/persistence)
+
 ## 本机启动 Agent 画布
 
 需要 JDK 17 和 Maven。先在服务端环境变量 `AGENT_DEMO_DB_PASSWORD` 中设置自己的数据库密码，再从仓库根目录执行：

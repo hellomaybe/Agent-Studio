@@ -30,6 +30,21 @@ Agent Studio 是一套基于 Spring AI 2.0.3 的可视化业务 Agent 工作台�
 
 Spring AI 的版本可以直接从 Maven 依赖核对。框架中的工具调用、检索增强有多种实现路径。上述表格仅列出此仓库已经落地的路径。[项目 POM](../agent-workbench/pom.xml) · [Spring AI 2.0.3 官方版本](https://github.com/spring-projects/spring-ai/releases/tag/v2.0.3) · [工具调用文档](https://docs.spring.io/spring-ai/reference/2.0/api/tools.html) · [检索增强文档](https://docs.spring.io/spring-ai/reference/2.0/api/retrieval-augmented-generation.html) · [会议结构化输出代码](../backend/src/main/java/studio/agent/model/MeetingTaskExtractor.java)
 
+## 生产选型
+
+**Agent Studio 的生产主链路选用 Java 17 和 Spring AI 2.0.3。** 前提是五个业务工具已经有可交付的 Java 实现，官网与自托管版都要对同一规则给出一致结果。选择 Spring AI 解决的是模型如何接入这套业务系统；判断系统能否上线，还要看故障时会留下什么记录，以及团队如何恢复和核对。
+
+| 需要作出的决定 | 本项目的取舍 | 采用 Python 时应核算的成本 |
+| --- | --- | --- |
+| 业务规则由谁维护 | 报价的税额与舍入交给既有 Java 计算器。模型负责理解输入，工具节点在同一 JVM 内调用计算器。 | 可以把 Java 工具保留为独立服务，也可以移植到 Python。前者要定义参数协议与超时语义，后者要用历史样例核对精度、舍入及异常输入。 |
+| 为什么锁定 2.0.3 | Maven 明确指定模型适配器版本。实际验收覆盖了豆包返回的函数名、参数及 token 用量。升级时有具体行为可做回归比较。 | Python SDK 同样可以锁定版本。迁移时要重新验证供应商兼容接口，例如空用量、无效工具名、超时和重复请求的处理。 |
+| 外部模型调用如何与本地数据保持一致 | 调用前预留预算，响应到达后读取用量；响应状态不明时保留预留额。运行完成状态和业务结果在同一 H2 事务提交。外部模型调用有独立的失败路径。 | Python 工作流同样可以使用检查点；接入方仍须设计业务幂等键、外部调用重试条件和费用核对方式。 |
+| 部署与故障由谁负责 | JDK 17 可运行独立工作台。通过运行编号可定位图版本、节点和模型回执。当前 H2 运行器按单进程设计，重启时将进行中的运行标记为中断。 | 若同时维护 Python 编排服务和 Java 工具服务，需要协调两套发布、接口兼容性和跨服务诊断。已有 Python 服务平台的团队可能已经承担了这些成本。 |
+
+相关实现见[依赖版本](../agent-workbench/pom.xml)、[模型与工具适配](../agent-workbench/src/main/java/studio/lab/AgentModel.java)、[报价计算器](../agent-workbench/src/main/java/studio/community/tools/quoteinvoice/service/InvoiceCalculator.java)和[存储与预算账本](../agent-workbench/src/main/java/studio/lab/AgentRepository.java)。Python 可参考 [LangGraph 的状态持久化机制](https://docs.langchain.com/oss/python/langgraph/persistence)。
+
+**何时重新评估？** 如果业务工具本身是 Python 库、核心工作依赖 Python 的模型实验与评测生态，或团队已经具备成熟的 Python 发布和监控体系，Python 编排值得优先评估。也可以保留现有 Java 工具，在独立 Python 环境做离线评测。若选型取决于延迟、吞吐或成本，应在同一模型、相同输入、相同并发和失败策略下实测；现有演示回执只能说明本项目的执行结果。
+
 ## 用一次真实运行介绍它
 
 2026 年 11 月 24 日公网验收时，行李 Agent 的一个 v2 流程收到了九天行程，检索命中《出行打包规范》。豆包通过原生函数调用请求 `packing_list`，返回参数 `{"text":"9"}`。工具按该版本的洗衣规则算出上衣 9 件、内衣 9 件，运行时校验通过并存储业务结果。方舟在这一轮返回输入 619、输出 208 个 token，按当时的配置单价估算为 0.0010568 元。这个数字只描述该次调用。

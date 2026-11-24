@@ -40,6 +40,12 @@ Beim Veröffentlichen speichert die Arbeitsfläche Prompt, Sucheinstellungen, Fe
 
 **Ein aufgezeichneter Aufruf.** Bei einem Test mit neun Reisetagen fand die Suche die Packrichtlinie. Doubao forderte `packing_list({"text":"9"})` an. Das Java-Werkzeug berechnete die Mengen nach der veröffentlichten Wäscheregel. Der Anbieter meldete 619 Eingabe- und 208 Ausgabetokens. Die geschätzten Kosten für diesen Aufruf betrugen 0,0010568 CNY. [Architektur und Quellcode-Verweise (Chinesisch)](docs/architecture.zh-CN.md)
 
+## Warum dieser Dienst in Produktion Spring AI 2.0.3 verwendet
+
+Bei einem Angebot extrahiert das Modell Positionen, Mengen und Preise. Die vorhandene Java-Komponente berechnet Steuern und rundet die Beträge. Über einen `ToolCallback` ruft der Workflow diese Komponente in derselben JVM auf. Eine geänderte Steuerregel lässt sich so in der gehosteten und der selbst betriebenen Arbeitsfläche mit derselben Implementierung ausliefern. Die festgelegte Version 2.0.3 macht nachvollziehbar, mit welcher Bibliotheksversion Modellanfragen, Funktionsargumente und Verbrauchsdaten geprüft wurden. [Modellanbindung](agent-workbench/src/main/java/studio/lab/AgentModel.java) · [Fachwerkzeuge](agent-workbench/src/main/java/studio/lab/Features.java)
+
+Auch Python eignet sich für produktive Agenten. In diesem Repository müsste eine Python-Laufzeit fünf vorhandene Java-Werkzeuge einbinden. Bei einer Portierung wären Vergleichstests für beide Implementierungen nötig. Ein Aufruf über Java-Dienste erfordert versionierte Schnittstellen sowie Regeln für Zeitüberschreitungen und Wiederholungen. Für Teams mit vorhandenen Python-Werkzeugen und eigener Betriebsinfrastruktur fällt die Abwägung anders aus. In beiden Fällen müssen doppelte Anfragen, Freigaben, die Trennung der Arbeitsbereiche und die Kostenerfassung getestet werden. [Entscheidungsgrundlage auf Chinesisch](docs/architecture.zh-CN.md#生产选型) · [Persistenz mit LangGraph für Python](https://docs.langchain.com/oss/python/langgraph/persistence)
+
 ## Die Agent-Arbeitsfläche lokal starten
 
 Du brauchst JDK 17 und Maven. Hinterlege ein eigenes Datenbankpasswort in der Umgebungsvariablen `AGENT_DEMO_DB_PASSWORD` des Servers und führe im Stammverzeichnis des Repositorys folgende Befehle aus:
